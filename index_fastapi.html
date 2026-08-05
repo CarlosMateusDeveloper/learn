@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastAPI em Profundidade — Módulo 1: Introdução ao FastAPI</title>
+<meta name="description" content="Módulo 1 completo: a pilha Uvicorn, ASGI e Starlette, async/await e event loop — explicado sem parede de jargão.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A1216; --bg-2:#0E1A20; --card:#12222A; --card-2:#0D1A21;
+  --ink:#E8F2EF; --ink-2:#A9BFBA; --ink-3:#6E8783;
+  --blue:#4DA3FF; --blue-deep:#1E5FA8; --blue-soft:#12283D;
+  --green:#3DDC97; --green-deep:#1C9A66; --green-soft:#0F2B22;
+  --red:#FF7B6E; --red-soft:#33191B; --amber:#FFC24D; --amber-soft:#2E2413;
+  --line:#22343A; --radius:14px;
+  --disp:"Bricolage Grotesque",sans-serif; --body:"Inter",sans-serif; --mono:"JetBrains Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16.5px;line-height:1.75}
+.wrap{max-width:820px;margin:0 auto;padding:0 22px}
+a{color:var(--blue)}
+a:focus-visible,input:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+code{font-family:var(--mono);font-size:.86em;background:var(--blue-soft);color:#9CCBFF;padding:2px 7px;border-radius:6px}
+h1{font-family:var(--disp);font-weight:700;font-size:clamp(32px,6vw,52px);line-height:1.12;margin:12px 0 16px}
+h2{font-family:var(--disp);font-weight:600;font-size:clamp(23px,4vw,30px);line-height:1.25;scroll-margin-top:90px}
+p{margin:0 0 16px}
+.lead{color:var(--ink-2);font-size:18px}
+.eyebrow{font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+#progress{position:fixed;top:0;left:0;height:3px;width:0%;background:linear-gradient(90deg,var(--blue),var(--green));z-index:50}
+header.top{padding:18px 0;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(10,18,22,.92);backdrop-filter:blur(6px);z-index:40}
+header.top .wrap{max-width:1000px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{font-family:var(--disp);font-weight:700;font-size:17px}
+.logo b{color:var(--green)}
+.tag{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.hero{padding:56px 0 40px}
+.section{padding:44px 0;border-top:1px solid var(--line)}
+.kicker{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.kicker .n{font-family:var(--mono);font-size:13px;color:var(--blue);border:1px solid var(--line);border-radius:999px;padding:2px 11px;background:var(--card-2);white-space:nowrap}
+.toc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:30px}
+.toc h3{font-family:var(--disp);font-size:16px;font-weight:600;margin-bottom:12px;color:var(--ink-2)}
+.toc ol{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 20px;counter-reset:t}
+.toc a{display:flex;gap:10px;align-items:baseline;color:var(--ink-2);text-decoration:none;font-size:14.5px;padding:5px 8px;border-radius:8px;counter-increment:t}
+.toc a::before{content:"1." counter(t);font-family:var(--mono);font-size:12px;color:var(--green)}
+.toc a:hover{background:var(--bg-2);color:var(--ink)}
+.callout{border-radius:0 var(--radius) var(--radius) 0;padding:16px 20px;margin:20px 0;font-size:15.5px}
+.callout b:first-child{font-family:var(--disp)}
+.analogy{border-left:4px solid var(--green);background:var(--green-soft)}
+.analogy b:first-child{color:var(--green)}
+.rule{border-left:4px solid var(--blue);background:var(--blue-soft)}
+.rule b:first-child{color:var(--blue)}
+.trap{border-left:4px solid var(--red);background:var(--red-soft)}
+.trap b:first-child{color:var(--red)}
+.fix{border-left:4px solid var(--amber);background:var(--amber-soft)}
+.fix b:first-child{color:var(--amber)}
+pre{background:#08141B;border:1px solid var(--line);color:#D7E7F2;border-radius:12px;padding:18px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.7;margin:16px 0}
+pre .c{color:#5F7E8C}pre .g{color:#3DDC97}pre .k{color:#4DA3FF}pre .r{color:#FF9B8E}
+.flow{font-family:var(--mono);font-size:14px;background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:16px 0;color:var(--ink-2);overflow-x:auto;white-space:nowrap}
+.flow b{color:var(--green)}
+.flow span{color:var(--blue)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--disp);font-weight:600;font-size:14px}
+th:first-child,td:first-child{color:var(--green)}
+th:last-child,td:last-child{color:var(--blue)}
+td{color:var(--ink-2)}
+.tree{font-family:var(--mono);font-size:13.5px;color:var(--ink-2);background:var(--card-2);border:1px solid var(--line);border-radius:12px;padding:18px;margin:16px 0;line-height:1.8;white-space:pre;overflow-x:auto}
+.check{background:var(--card);border:1px solid var(--green-deep);border-radius:16px;padding:22px;margin-top:20px}
+.check h3{font-family:var(--disp);font-size:18px;color:var(--green);margin-bottom:10px}
+.check label{display:flex;gap:10px;align-items:flex-start;font-size:15.5px;color:var(--ink-2);margin-bottom:10px;cursor:pointer}
+.check input{accent-color:var(--green);width:18px;height:18px;margin-top:4px;flex-shrink:0}
+footer{padding:44px 0 60px;color:var(--ink-3);font-size:14px;border-top:1px solid var(--line)}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media (max-width:640px){body{font-size:16px}}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div id="progress" aria-hidden="true"></div>
+
+<header class="top">
+  <div class="wrap">
+    <div class="logo">FastAPI <b>em profundidade</b></div>
+    <div class="tag">módulo 1 de 5 · introdução ao FastAPI</div>
+  </div>
+</header>
+
+<main>
+<section class="hero wrap">
+  <span class="eyebrow">curso · para quem já desenvolve</span>
+  <h1>Módulo 1 — Introdução<br>ao FastAPI</h1>
+  <p class="lead">Objetivo: entender quem faz o quê quando sua API recebe uma requisição. No final, nomes como Uvicorn, ASGI e Starlette deixam de ser palavras soltas e viram um mapa mental simples. Você não precisa decorar nada — eles aparecem tantas vezes em contexto que grudam sozinhos.</p>
+  <div class="toc">
+    <h3>Neste módulo</h3>
+    <ol>
+      <li><a href="#s11">Como o FastAPI funciona</a></li>
+      <li><a href="#s12">Cliente e servidor</a></li>
+      <li><a href="#s13">Rotas e endpoints</a></li>
+      <li><a href="#s14">Uvicorn</a></li>
+      <li><a href="#s15">ASGI</a></li>
+      <li><a href="#s16">Starlette</a></li>
+      <li><a href="#s17">async e await</a></li>
+      <li><a href="#s18">Event loop</a></li>
+      <li><a href="#s19">Configurando o ambiente</a></li>
+      <li><a href="#s110">Estrutura inicial do projeto</a></li>
+      <li><a href="#s111">Executando o servidor</a></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.1</span><h2 id="s11">Como o FastAPI funciona</h2></div>
+  <p>O FastAPI não faz tudo sozinho — ele é montado sobre duas peças:</p>
+  <p><b style="color:var(--green)">Starlette</b> cuida da parte "web": receber requisições, encontrar a rota certa, devolver respostas. <b style="color:var(--blue)">Pydantic</b> cuida da parte "dados": conferir se o que chegou tem o formato certo.</p>
+  <p>E qual é a mágica que o FastAPI adiciona por cima? Ele <b>lê a assinatura das suas funções</b> — os tipos que você declara — e monta tudo a partir dela. Olhe:</p>
+<pre><span class="k">@app.get</span>(<span class="g">"/items/{item_id}"</span>)
+<span class="r">async def</span> read_item(item_id: <span class="k">int</span>, q: <span class="k">str</span> | <span class="k">None</span> = <span class="k">None</span>):
+    ...</pre>
+  <p>Só de olhar essa função, o FastAPI conclui três coisas: <code>item_id</code> está na URL e precisa ser um número — se alguém acessar <code>/items/abc</code>, ele recusa sozinho, sem nenhum <code>if</code> seu; <code>q</code> não está na URL, então deve vir depois do <code>?</code> e é opcional porque tem valor padrão; e tudo isso vira documentação automática na página <code>/docs</code>.</p>
+  <div class="fix"><b>Fixe isso:</b> a "leitura" das funções acontece uma vez só, quando o servidor liga — não a cada requisição. Se você errar a definição de uma rota, o erro aparece no startup, e não misteriosamente na primeira requisição de um usuário.</div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.2</span><h2 id="s12">Cliente e servidor</h2></div>
+  <p>Você já sabe o que é cliente e servidor — o que interessa aqui é <b>onde o FastAPI se encaixa nessa conversa</b>. E tem um detalhe que surpreende: o FastAPI nunca fala com o cliente diretamente. O caminho real é:</p>
+  <div class="flow">cliente &nbsp;→&nbsp; <b>Uvicorn</b> (o servidor de verdade) &nbsp;→&nbsp; <span>FastAPI</span> (o seu código) &nbsp;→&nbsp; resposta de volta</div>
+  <p>O FastAPI nunca toca a rede. Quem atende a conexão é o Uvicorn (já vamos falar dele), que traduz o que chegou e entrega mastigado para o seu código. Duas consequências práticas:</p>
+  <p>Se a API estiver atrás de um proxy (nginx, load balancer), o "cliente" que o FastAPI enxerga é o proxy, não o usuário final — por isso existe a opção <code>--proxy-headers</code> no Uvicorn, que ensina o servidor a ler o IP verdadeiro do usuário nos cabeçalhos. E se você precisar do dado cru, exatamente como chegou, basta pedir o objeto <code>Request</code> na sua função (<code>request: Request</code>) — acesso a tudo, antes de qualquer validação.</p>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.3</span><h2 id="s13">Rotas e endpoints</h2></div>
+  <p>Relembrando o vocabulário em uma linha: <b>rota</b> é o caminho (<code>/clientes</code>); <b>endpoint</b> é caminho + método (<code>GET /clientes</code> e <code>POST /clientes</code> são dois endpoints diferentes).</p>
+  <p>Cada vez que você escreve <code>@app.get(...)</code>, o FastAPI guarda essa rota numa lista interna. E aqui mora uma pegadinha clássica: na hora de decidir qual rota atende uma requisição, <b>ele percorre essa lista na ordem em que você declarou</b>:</p>
+<pre><span class="k">@app.get</span>(<span class="g">"/users/{user_id}"</span>)   <span class="c"># declarada primeiro</span>
+<span class="r">def</span> buscar_usuario(user_id: <span class="k">str</span>): ...
+
+<span class="k">@app.get</span>(<span class="g">"/users/me"</span>)          <span class="c"># declarada depois — NUNCA será alcançada!</span>
+<span class="r">def</span> meu_perfil(): ...</pre>
+  <p>Quando alguém acessa <code>/users/me</code>, a primeira rota captura antes, entendendo <code>"me"</code> como se fosse um <code>user_id</code>.</p>
+  <div class="rule"><b>Regra prática:</b> rotas fixas antes de rotas com variáveis.</div>
+  <p>Outra ferramenta que você vai usar o curso inteiro: o <code>APIRouter</code>. Pense nele como uma "mini-aplicação" que agrupa rotas parecidas — você define o prefixo e as configurações uma vez, e todas as rotas do grupo herdam:</p>
+<pre>router = APIRouter(prefix=<span class="g">"/clientes"</span>, tags=[<span class="g">"clientes"</span>])
+<span class="c"># tudo que for registrado nesse router já começa com /clientes</span></pre>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.4</span><h2 id="s14">Uvicorn</h2></div>
+  <p>O Uvicorn é o <b>servidor</b>: o programa que de fato fica escutando a porta, aceitando conexões e repassando cada requisição para o seu código.</p>
+  <div class="analogy"><b>Analogia:</b> o FastAPI é o cozinheiro, o Uvicorn é o atendente do balcão. O cozinheiro nunca fala com o cliente — o atendente recebe o pedido, leva pra cozinha e entrega o prato de volta.</div>
+  <p>O que vale saber sobre ele: instale com <code>pip install "uvicorn[standard]"</code> — o <code>[standard]</code> traz versões aceleradas dos componentes internos (um deles, o <code>uvloop</code>, deixa a parte assíncrona 2 a 4 vezes mais rápida, de graça, sem mudar nada no seu código). <b>Um processo do Uvicorn usa um núcleo do processador</b> — a máquina de produção tem 4 núcleos? Rode <code>--workers 4</code> para criar 4 cópias e aproveitar tudo. E o <code>--reload</code> (reiniciar sozinho quando o código muda) é maravilhoso em desenvolvimento e proibido em produção: ele derruba e recria o processo a cada mudança de arquivo.</p>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.5</span><h2 id="s15">ASGI</h2></div>
+  <p>Se o Uvicorn é o atendente e o FastAPI é o cozinheiro, o <b>ASGI é o idioma que os dois combinaram falar</b>. É um padrão — um contrato — que define exatamente como um servidor Python entrega requisições para um framework.</p>
+  <p>E o contrato é surpreendentemente pequeno. Uma aplicação ASGI é só uma função assíncrona com três parâmetros: <code>scope</code> (um dicionário com as informações da requisição), <code>receive</code> (uma função para receber o corpo) e <code>send</code> (uma função para enviar a resposta). Quer ver algo curioso? Isto é uma aplicação web completa, sem framework nenhum, que roda no Uvicorn do mesmo jeito que o FastAPI:</p>
+<pre><span class="r">async def</span> app_crua(scope, receive, send):
+    <span class="r">await</span> send({
+        <span class="g">"type"</span>: <span class="g">"http.response.start"</span>,
+        <span class="g">"status"</span>: <span class="k">200</span>,
+        <span class="g">"headers"</span>: [(<span class="g">b"content-type"</span>, <span class="g">b"application/json"</span>)],
+    })
+    <span class="r">await</span> send({<span class="g">"type"</span>: <span class="g">"http.response.body"</span>, <span class="g">"body"</span>: <span class="g">b'{"ok": true}'</span>})</pre>
+  <p>Você nunca vai escrever isso no dia a dia. Mas saber que o FastAPI, lá no fundo, é "só" uma função dessas explica coisas que vêm pela frente: por que peças de outros frameworks encaixam nele, e por que WebSockets e streaming funcionam nativamente.</p>
+  <div class="fix"><b>Fixe isso:</b> existia um padrão mais antigo, o WSGI (usado pelo Flask clássico), que só trabalhava de forma síncrona — um pedido por vez, esperando parado. O ASGI é a evolução dele para o mundo assíncrono. O "A" é de <i>Asynchronous</i>.</div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.6</span><h2 id="s16">Starlette</h2></div>
+  <p>Aqui vai um segredo que simplifica sua vida: <b>o FastAPI é uma subclasse do Starlette</b> — literalmente <code>class FastAPI(Starlette)</code> no código-fonte. O Starlette é um framework web menor e mais cru; o FastAPI herda tudo dele e adiciona a camada inteligente de validação e documentação. Na hora de procurar documentação ou entender um erro, ajuda saber de qual camada vem cada peça:</p>
+  <table>
+    <tr><th>Herdado do Starlette</th><th>Adicionado pelo FastAPI</th></tr>
+    <tr><td>Request e Response</td><td>Depends (você conhece no Módulo 3)</td></tr>
+    <tr><td>Middlewares (código antes/depois de toda requisição)</td><td>Validação automática pelos tipos</td></tr>
+    <tr><td>BackgroundTasks (tarefas depois da resposta — Módulo 4)</td><td>response_model (filtro da resposta — Módulo 2)</td></tr>
+    <tr><td>WebSockets, arquivos estáticos</td><td>As páginas /docs e /redoc</td></tr>
+  </table>
+  <p>Na prática: qualquer coisa compatível com Starlette funciona no FastAPI sem adaptação. Se um middleware de terceiros diz "para Starlette", pode usar.</p>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.7</span><h2 id="s17">async e await</h2></div>
+  <p>Este é <b>o tópico mais importante do módulo</b> — é o que separa uma API rápida de uma API que trava sem ninguém entender por quê. Vamos com calma.</p>
+  <p>Uma função normal do Python, quando espera algo lento (uma consulta ao banco, uma chamada a outra API), <b>espera parada</b>. Uma função assíncrona (<code>async def</code>) consegue dizer: "vou esperar isso aqui, mas enquanto isso pode atender outras pessoas". O <code>await</code> é exatamente esse aviso.</p>
+  <p>No FastAPI, seus endpoints podem ser escritos dos dois jeitos — e os dois funcionam. Mas cada escolha tem uma consequência: com <b><code>def</code> comum</b>, o FastAPI percebe e executa sua função numa linha de execução separada (uma <i>thread</i>) para não travar o resto — é a escolha segura. Com <b><code>async def</code> esperando coisas assíncronas</b>, você tem o cenário ideal: espera sem travar ninguém. E com <b><code>async def</code> escondendo uma biblioteca bloqueante dentro</b>... vem a armadilha:</p>
+<pre><span class="c"># ❌ A ARMADILHA: async por fora, bloqueante por dentro — trava o servidor inteiro</span>
+<span class="r">@app.get</span>(<span class="g">"/lento"</span>)
+<span class="r">async def</span> lento():
+    r = requests.get(<span class="g">"https://api.externa.com"</span>)   <span class="c"># requests é bloqueante!</span>
+    <span class="r">return</span> r.json()
+
+<span class="c"># ✅ Opção segura: def comum — o FastAPI cuida de não travar</span>
+<span class="k">@app.get</span>(<span class="g">"/ok-1"</span>)
+<span class="r">def</span> ok_sync():
+    r = requests.get(<span class="g">"https://api.externa.com"</span>)
+    <span class="r">return</span> r.json()
+
+<span class="c"># ✅ Opção ideal: async de ponta a ponta (httpx é o "requests assíncrono")</span>
+<span class="k">@app.get</span>(<span class="g">"/ok-2"</span>)
+<span class="r">async def</span> ok_async():
+    <span class="r">async with</span> httpx.AsyncClient() <span class="r">as</span> client:
+        r = <span class="r">await</span> client.get(<span class="g">"https://api.externa.com"</span>)
+    <span class="r">return</span> r.json()</pre>
+  <div class="rule"><b>Regra de bolso do curso inteiro:</b> só escreva <code>async def</code> se tudo que a função espera puder receber <code>await</code>. Na dúvida, use <code>def</code> comum — ele nunca cai na armadilha.</div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.8</span><h2 id="s18">Event loop</h2></div>
+  <p>Falta conhecer <b>quem</b> administra essa dança de "espera aqui, atende ali". Esse administrador é o <i>event loop</i> (em bom português, "laço de eventos" — mas todo mundo usa o nome em inglês).</p>
+  <div class="analogy"><b>Analogia:</b> um garçom num restaurante cheio. Ele anota o pedido da mesa 1 e leva à cozinha. Não fica parado olhando a comida ficar pronta — atende a mesa 2, depois a 3, e quando o prato da mesa 1 sai, ele volta. Um único garçom, dezenas de mesas, ninguém abandonado. Cada <code>await</code> é o momento em que o garçom larga uma espera e vai cuidar de outra mesa.</div>
+  <p>É por isso que um único processo aguenta milhares de conexões simultâneas. Mas a analogia também revela o perigo: o restaurante inteiro depende de <b>um garçom só</b>.</p>
+  <div class="trap"><b>O perigo:</b> se o garçom parar para descascar um saco de batatas (uma tarefa pesada, sem nenhum <code>await</code>), todas as mesas ficam sem atendimento. É a armadilha da seção 1.7 — e também o que acontece com um <code>time.sleep(5)</code> dentro de <code>async def</code>. O certo ali é <code>await asyncio.sleep(5)</code>, que devolve o controle ao garçom durante a espera.</div>
+  <p>Um truque bônus para fechar: dentro de uma mesma requisição, dá para pedir várias coisas <b>ao mesmo tempo</b> — se cada busca leva 1 segundo, o total é ~1 segundo, não 3:</p>
+<pre><span class="k">@app.get</span>(<span class="g">"/dashboard"</span>)
+<span class="r">async def</span> dashboard():
+    <span class="c"># as três buscas acontecem em paralelo, não uma depois da outra</span>
+    vendas, estoque, clima = <span class="r">await</span> asyncio.gather(
+        buscar_vendas(), buscar_estoque(), buscar_clima()
+    )
+    <span class="r">return</span> {<span class="g">"vendas"</span>: vendas, <span class="g">"estoque"</span>: estoque, <span class="g">"clima"</span>: clima}</pre>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.9</span><h2 id="s19">Configurando o ambiente</h2></div>
+<pre>python -m venv .venv
+source .venv/bin/activate        <span class="c"># Windows: .venv\Scripts\activate</span>
+pip install <span class="g">"fastapi[standard]"</span></pre>
+  <p>O <code>[standard]</code> instala o kit completo: FastAPI + Uvicorn turbinado + utilitários (incluindo o <code>httpx</code>, que você acabou de conhecer).</p>
+  <div class="fix"><b>Dica de quem já se queimou:</b> congele as versões (<code>pip freeze &gt; requirements.txt</code>) — FastAPI e Pydantic evoluem rápido, e "ontem funcionava" é um dos bugs mais chatos de investigar.</div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.10</span><h2 id="s110">Estrutura inicial do projeto</h2></div>
+  <p>Por enquanto, simples assim:</p>
+<div class="tree">projeto/
+├── .venv/
+├── .env               <span style="color:var(--ink-3)"># configurações sensíveis — NUNCA vai pro git</span>
+├── requirements.txt
+└── app/
+    ├── __init__.py
+    └── main.py</div>
+  <div class="rule"><b>Regra que vale desde o primeiro dia e para sempre:</b> o <code>main.py</code> só <i>monta</i> a aplicação (cria o app, registra as rotas). Lógica de negócio nunca mora nele. A estrutura cresce no Módulo 3.</div>
+</div></section>
+
+<section class="section"><div class="wrap">
+  <div class="kicker"><span class="n">1.11</span><h2 id="s111">Executando o servidor</h2></div>
+<pre><span class="c"># desenvolvimento (reinicia sozinho e mostra erros bonitos)</span>
+fastapi dev app/main.py
+
+<span class="c"># o jeito clássico, equivalente</span>
+uvicorn app.main:app --reload
+
+<span class="c"># produção: sem reload, vários workers (lembra? 1 worker = 1 núcleo)</span>
+uvicorn app.main:app --host 0.0.0.0 --workers 4</pre>
+  <div class="check">
+    <h3>✔ Critério de pronto do módulo</h3>
+    <label><input type="checkbox"> Consigo explicar para um colega, com minhas palavras, o caminho de uma requisição: cliente → Uvicorn → meu código, com o ASGI como "idioma" entre eles.</label>
+    <label><input type="checkbox"> Sei responder "quando uso <code>def</code> e quando uso <code>async def</code>?" — com o porquê.</label>
+    <label><input type="checkbox"> Rodei o servidor na minha máquina e vi a resposta no navegador.</label>
+    <p style="margin:10px 0 0;font-size:14.5px;color:var(--ink-3)">Marcou os três? O Módulo 2 te espera: lá, a assinatura da função vira o contrato da API.</p>
+  </div>
+</div></section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>FastAPI em Profundidade · Módulo 1 — Introdução ao FastAPI</span>
+    <span>feito para estudar com calma ☕</span>
+  </div>
+</footer>
+
+<script>
+window.addEventListener("scroll",function(){
+ var h=document.documentElement;
+ var p=h.scrollTop/(h.scrollHeight-h.clientHeight)*100;
+ document.getElementById("progress").style.width=p+"%";
+},{passive:true});
+</script>
+</body>
+</html>
